@@ -1,0 +1,275 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 15%, #0e0728 0%, #05030e 55%, #020106 100%);
+  font-family: 'Rajdhani', sans-serif;
+  color: #fff;
+}
+
+#space-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.nebula-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(75px);
+  opacity: .35;
+  mix-blend-mode: screen;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.white-card {
+  background: #fff;
+  border-radius: 20px;
+  position: relative;
+  box-shadow: 0 16px 36px -6px rgba(0,0,0,.55), 0 0 0 1px rgba(255,215,0,.45), 0 0 22px rgba(255,20,147,.22);
+}
+
+.white-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 21px;
+  padding: 1.5px;
+  background: linear-gradient(135deg, #ffd700, #ff2a85 45%, #ffd700 90%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* FINAL REACTOR - BLACK GLASS GALAXY ORB + RINGS + DOTS */
+#akili-galaxy {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 72px;
+  height: 72px;
+  z-index: 50;
+  background: transparent !important;
+  border: none !important;
+  overflow: visible;
+  cursor: grab;
+  touch-action: none;
+  transition: all .4s cubic-bezier(.16, 1, .3, 1);
+}
+
+#akili-galaxy:active {
+  cursor: grabbing;
+}
+
+#akili-galaxy.enlarged {
+  width: 310px !important;
+  height: 310px !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 9999 !important;
+}
+
+#galaxy-backdrop-scrim {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(10,3,22,.8) 0%, rgba(2,1,6,.92) 80%);
+  backdrop-filter: blur(10px);
+  z-index: 9990;
+  opacity: 0;
+  pointer-events: none;
+  transition: .4s;
+}
+
+#galaxy-backdrop-scrim.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.orb-core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(at 32% 28%, rgba(255,255,255,.9) 0%, rgba(255,236,139,.6) 6%, transparent 18%), radial-gradient(at 50% 50%, #000 18%, #1a0030 35%, #ff1493 48%, #c71585 55%, #ffd700 62%, #000 78%);
+  box-shadow: inset 0 0 18px #000, 0 0 18px #ff1493aa, 0 0 35px #ffd70055;
+  overflow: hidden;
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.galaxy-swirl {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg, #ff1493 50deg, #ff69b4 110deg, #ffd700 160deg, #ff1493 220deg, transparent 310deg);
+  mask: radial-gradient(circle, black 15%, transparent 68%);
+  -webkit-mask: radial-gradient(circle, black 15%, transparent 68%);
+  opacity: .95;
+  animation: spin 7s linear infinite;
+  filter: blur(.4px);
+}
+
+.stardust {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 35%, #ffec8b 1px, transparent 1.5px), radial-gradient(circle at 60% 55%, #ffd700 1px, transparent 1.5px), radial-gradient(circle at 45% 70%, #fff 1px, transparent 1.5px);
+  opacity: .9;
+}
+
+.flare {
+  position: absolute;
+  top: 18%;
+  left: 28%;
+  width: 28%;
+  height: 28%;
+  background: radial-gradient(circle, #fff 0%, #ffec8b 25%, #ffd700 50%, transparent 75%);
+  filter: blur(.8px) drop-shadow(0 0 12px #ffd700);
+  opacity: .95;
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+.ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 2px solid #d4af37;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotateX(65deg) rotateZ(-18deg);
+  box-shadow: 0 0 6px #ffd700;
+  pointer-events: none;
+}
+
+.ring1 {
+  width: 132%;
+  height: 132%;
+  animation: spinRing1 11s linear infinite;
+  border-width: 2.2px;
+}
+
+.ring2 {
+  width: 142%;
+  height: 142%;
+  opacity: .7;
+  animation: spinRing2 17s linear infinite reverse;
+  border-width: 1.8px;
+}
+
+.bead {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: radial-gradient(#ffec8b,#d4af37);
+  border-radius: 50%;
+  box-shadow: 0 0 8px #ffd700;
+}
+
+.bead1 {
+  top: 4%;
+  left: 84%;
+}
+
+.bead2 {
+  bottom: 18%;
+  right: 12%;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinRing1 {
+  from {
+    transform: translate(-50%, -50%) rotateX(65deg) rotateZ(-18deg) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotateX(65deg) rotateZ(-18deg) rotate(360deg);
+  }
+}
+
+@keyframes spinRing2 {
+  from {
+    transform: translate(-50%, -50%) rotateX(65deg) rotateZ(22deg) rotate(360deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotateX(65deg) rotateZ(22deg) rotate(0deg);
+  }
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: .7;
+    transform: scale(.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* STATES gold pink glow from inside */
+#akili-galaxy.listening {
+  filter: drop-shadow(0 0 30px #ffd700) drop-shadow(0 0 55px #ffd700aa);
+}
+
+#akili-galaxy.thinking .galaxy-swirl,
+#akili-galaxy.thinking.galaxy-swirl {
+  animation-duration: 1s !important;
+}
+
+#akili-galaxy.speaking {
+  filter: drop-shadow(0 0 25px #ff1493) drop-shadow(0 0 45px #ffd700);
+}
+
+#akili-galaxy.speaking .orb-core,
+#akili-galaxy.speaking.orb-core {
+  animation: breathe .6s infinite;
+}
+
+.charge-ring {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: calc(100% + 16px);
+  height: calc(100% + 16px);
+  pointer-events: none;
+  opacity: 0;
+  transform: rotate(-90deg);
+  transition: .15s;
+}
+
+.charge-ring circle {
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  transition: stroke-dashoffset .7s linear;
+}
+
+#akili-galaxy.charging .charge-ring,
+#akili-galaxy.charging.charge-ring {
+  opacity: 1;
+}
+
+#akili-galaxy.charging .charge-ring circle,
+#akili-galaxy.charging.charge-ring circle {
+  stroke-dashoffset: 0;
+}

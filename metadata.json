@@ -1,0 +1,9 @@
+{
+  "name": "AKILI Celestial Neural HUD",
+  "description": "AKILI OS V.CEL - Celestial Neural HUD with interactive black glass galaxy reactor orb, circadian solar sync, quantum eye tracking, and AI synapse core.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
