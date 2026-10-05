@@ -212,3 +212,80 @@ export function resolveEdgeVoice(
     speechSynthesisVoice: matchedVoice
   };
 }
+let asiliaVoice: SpeechSynthesisVoice | null = null;
+let zuriVoice: SpeechSynthesisVoice | null = null;
+export function loadVoices() {
+  try {
+    const vs = window.speechSynthesis?.getVoices() || [];
+    asiliaVoice = getAsiliaVoice(vs) || null;
+    zuriVoice = getZuriVoice(vs) || null;
+  } catch {}
+}
+export function getAsiliaVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
+  return voices.find((v) => v.name.includes("Samantha") || v.name.includes("Google UK English Female"))
+    || voices.find((v) => v.lang === "en-KE" && !/male/i.test(v.name))
+    || voices.find((v) => v.lang === "en-GB" && !/male/i.test(v.name))
+    || voices.find((v) => v.lang.startsWith("en") && !/male/i.test(v.name));
+}
+export function getZuriVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
+  return voices.find((v) => v.lang === "sw-KE" || v.lang.startsWith("sw") || v.name.includes("Swahili"))
+    || voices.find((v) => v.lang === "en-KE" && !/male/i.test(v.name));
+}
+export function speakAsilia(text: string) {
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const vs = window.speechSynthesis.getVoices();
+    const v = asiliaVoice || getAsiliaVoice(vs);
+    if (v) { u.voice = v; u.lang = v.lang || "en-KE"; } else u.lang = "en-KE";
+    u.pitch = 1.15; u.rate = 0.92; u.volume = 1.0;
+    window.speechSynthesis.speak(u);
+  } catch {}
+}
+export function speakZuri(text: string) {
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const vs = window.speechSynthesis.getVoices();
+    const v = zuriVoice || getZuriVoice(vs);
+    if (v) { u.voice = v; u.lang = v.lang || "sw-KE"; } else u.lang = "sw-KE";
+    u.pitch = 1.1; u.rate = 0.9; u.volume = 1.0;
+    window.speechSynthesis.speak(u);
+  } catch {}
+}
+export function autoDetectLanguageAndSpeak(text: string) {
+  if (/habari|mambo|poa|sawa|asante|karibu|nzuri|shikamoo|vipi|nani|wewe|mimi/i.test(text)) speakZuri(text);
+  else speakAsilia(text);
+}
+export function speak(text: string) { autoDetectLanguageAndSpeak(text); }
+export function listen(onResult: (t: string) => void) {
+  try {
+    const W = window as any;
+    const SR = W.SpeechRecognition || W.webkitSpeechRecognition;
+    if (!SR) return null;
+    const r = new SR();
+    r.lang = "en-KE"; r.interimResults = false; r.continuous = false;
+    r.onresult = (e: any) => onResult(e.results[0][0].transcript);
+    r.start();
+    return r;
+  } catch { return null; }
+}
+/** KEEP typing capability anywhere */
+export async function reactorType(text: string): Promise<boolean> {
+  try {
+    const n = (window as any).AndroidInterface;
+    if (n?.globalType) return n.globalType(text);
+    const a = document.activeElement as any;
+    if (a && "value" in a) { a.value = text; a.dispatchEvent(new Event("input", { bubbles: true })); return true; }
+    const inp = document.querySelector("input,textarea") as any;
+    if (inp) { inp.focus(); inp.value = text; inp.dispatchEvent(new Event("input", { bubbles: true })); return true; }
+  } catch {}
+  return false;
+}
+if (typeof window !== "undefined") {
+  try {
+    window.speechSynthesis?.addEventListener?.("voiceschanged", loadVoices);
+    setTimeout(loadVoices, 800);
+  } catch {}
+}
+

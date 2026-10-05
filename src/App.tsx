@@ -1,5 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { EDGE_VOICES, resolveEdgeVoice, detectLanguageSmart, isSwahiliOrSheng, VoiceMode } from './services/voiceService';
+import { whoAmI, whoIsShe, groqThink, akiliDecide, executeAction, playGameContinuously, stopGame, isPlaying } from './services/akiliBrain';
+import { getReactorMode, setReactorMode, requestOverlayPermission, requestAccessibilityPermission } from './plugins/reactorPlugin';
+import { connectToPC, isPcConnected, getPcIP, pcMoveMouse, pcType, pcClick } from './services/pcControlService';
+import { see as screenSee } from './services/screenService';
 
 type Tab = 'chat' | 'eyes' | 'alarm' | 'tasks';
 
@@ -77,6 +81,11 @@ export default function App() {
   const [brainSource, setBrainSource] = useState<string>('GROQ 120B / GEMINI 3.5');
   const [micLang, setMicLang] = useState<'en-KE' | 'sw-KE'>('en-KE'); // default en-KE so 'Who am I' doesn't become 'huwa mae mbe'
   const [lastTranscript, setLastTranscript] = useState<string>('');
+  // V6 ONE BRAIN: Reactor mode Everywhere/App Only + PC control (KEEP orb handlers below)
+  const [reactorMode, setReactorModeState] = useState<string>(() => { try { return localStorage.getItem('reactorMode') || 'everywhere'; } catch { return 'everywhere'; } });
+  const [pcIP, setPcIP] = useState<string>(() => { try { return localStorage.getItem('pcIP') || '192.168.1.10'; } catch { return '192.168.1.10'; } });
+  const [pcStatus, setPcStatus] = useState<string>('Disconnected');
+  const [gameStatus, setGameStatus] = useState<string>('Idle');
 
   // Multi-Alarm System (User requested: "Alarm only 1 time edit - need many")
   const [alarms, setAlarms] = useState<AlarmItem[]>(() => {
@@ -371,8 +380,23 @@ export default function App() {
     return () => el.removeEventListener('touchmove', handleTouch);
   }, []);
 
-  // 2. REAL BRAIN QUERY WIRING (Groq 120B -> Gemini 3.5 Flash -> Grounded Fallback)
+  // 2. ONE BRAIN QUERY WIRING (akiliBrain ONLY brain - keeps old protocols as offline fast-path)
   const askBrain = async (q: string): Promise<{ text: string; source: string; lang?: 'sw' | 'en' }> => {
+    const lowQ = q.toLowerCase();
+    // V6 reactor/game/PC commands via One Brain
+    try {
+      if (lowQ.includes('stop akili') || lowQ.includes('akili stop') || lowQ.includes('tulia')) { stopGame(); setGameStatus('Idle'); return { text: 'Stopped boss. Reactor standing by.', source: 'ONE BRAIN' }; }
+      if (lowQ.includes('play this game') || lowQ.includes('play game')) { setGameStatus('Playing to WIN...'); playGameContinuously('current-screen-game').then(() => setGameStatus('Idle')); return { text: 'Playing to win until you say Stop Akili, boss.', source: 'ONE BRAIN GAME' }; }
+      if (lowQ.includes('open') && lowQ.includes('pc')) {
+        const app = q.replace(/.*open /i, '').replace(/ on.*pc/i, '');
+        try { const P = await import('./services/pcControlService'); P.pcOpenApp(app); } catch {}
+        return { text: 'Opening ' + app + ' on your PC, boss.', source: 'PHONE->PC' };
+      }
+    } catch {}
+    // V6 identity offline (Mark Allan canonical, keep Prof Mark flavor)
+    if (lowQ.includes('who am i') || lowQ.includes('mimi ni nani') || lowQ.includes('unanijua') || lowQ.includes('huwa mae')) {
+      return { text: whoAmI() + ' Also known as Prof Mark, builder of Akili V8 & MK-IV Reactor.', source: 'ONE BRAIN IDENTITY', lang: isSwahiliText(q) ? 'sw' : 'en' };
+    }
     // Check specific "Who am I? / Mimi ni nani? / huwa mae mbe" queries
     if (isCreatorQuestion(q)) {
       if (isSwahiliText(q)) {
@@ -893,6 +917,29 @@ export default function App() {
                   <div className="text-[7.5px] font-mono text-neutral-500">MIC FILTER</div>
                   <div className="font-bold text-[10px] text-emerald-600 truncate">DSP Echo Cancel</div>
                 </div>
+              </div>
+            </div>
+
+            {/* V6 ONE BRAIN CONTROL DECK - KEEP existing telemetry above, ADD below */}
+            <div className="bg-white rounded-[18px] p-3 text-neutral-900 shadow-lg border-l-4 border-l-amber-400 space-y-2">
+              <div className="font-['Orbitron'] font-black text-[10px] text-[#9c6500]">REACTOR: {reactorMode === 'everywhere' ? 'EVERYWHERE (over all apps)' : 'APP ONLY'}</div>
+              <div className="flex gap-2">
+                <button onClick={() => { const m = reactorMode === 'everywhere' ? 'appOnly' : 'everywhere'; setReactorModeState(m); try { localStorage.setItem('reactorMode', m); } catch {} if (m === 'everywhere') { requestOverlayPermission(); requestAccessibilityPermission(); } }} className="flex-1 py-2 rounded-full bg-amber-400 font-black text-[10px] active:scale-95">TOGGLE: {reactorMode === 'everywhere' ? 'APP ONLY' : 'EVERYWHERE'}</button>
+              </div>
+              <div className="text-[9px] font-mono text-emerald-700">Bubble: {reactorMode === 'everywhere' ? 'Active - Double press bubble to talk' : 'App Only'} • Game: {gameStatus}</div>
+              <div className="flex gap-2">
+                <button onClick={() => { setGameStatus('Playing to WIN...'); playGameContinuously('current-screen-game').then(() => setGameStatus('Idle')); }} className="flex-1 py-2 rounded-full bg-black text-amber-300 font-black text-[10px] active:scale-95">PLAY GAME TO WIN</button>
+                <button onClick={() => { stopGame(); setGameStatus('Idle'); }} className="flex-1 py-2 rounded-full bg-red-500 text-white font-black text-[10px] active:scale-95">STOP AKILI</button>
+              </div>
+              <div className="font-['Orbitron'] font-black text-[10px] text-[#9c6500] pt-1">PHONE CONTROLS PC</div>
+              <div className="flex gap-2">
+                <input value={pcIP} onChange={(e) => setPcIP(e.target.value)} placeholder="192.168.1.10" className="flex-1 bg-black/5 rounded-full px-3 py-2 text-[12px] outline-none" />
+                <button onClick={async () => { const ok = await connectToPC(pcIP); setPcStatus(ok ? ('PC Connected at ' + pcIP) : 'Disconnected'); }} className="px-4 py-2 rounded-full bg-emerald-500 text-white font-black text-[10px] active:scale-95">CONNECT</button>
+              </div>
+              <div className="text-[9px] font-mono">{pcStatus}</div>
+              <div className="flex gap-2">
+                <button onClick={() => { pcMoveMouse(500, 300); pcClick(); }} className="flex-1 py-1.5 rounded-full bg-neutral-200 text-[10px] font-bold active:scale-95">TEST MOVE+CLICK</button>
+                <button onClick={() => pcType('Hello from Akili phone')} className="flex-1 py-1.5 rounded-full bg-neutral-200 text-[10px] font-bold active:scale-95">TEST TYPE</button>
               </div>
             </div>
 
