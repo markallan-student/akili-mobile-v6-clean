@@ -5,3 +5,5 @@ node_modules/
 dist/
 pc-bridge/__pycache__/
 *.log
+android-sdk/
+android/
